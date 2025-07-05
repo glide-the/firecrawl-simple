@@ -272,9 +272,7 @@ export async function scrapeSingleUrl(
 
     let linksOnPage: string[] | undefined;
     Logger.info(
-      `Find linksOnPage ID  ${scrapeId} pageOptions.includeLinks ${pageOptions.includeLinks} to ${linksOnPage.join(
-        ", "
-      )}`
+      `Find linksOnPage ID  ${scrapeId} pageOptions.includeLinks ${pageOptions.includeLinks}}`
     );
     if (pageOptions.includeLinks) {
       linksOnPage = extractLinks(rawHtml, urlToScrape);
@@ -285,40 +283,41 @@ export async function scrapeSingleUrl(
       );
       // 新增：自动发现分页链接（适配新版HTML结构）
       const $ = cheerio.load(rawHtml);
-      const pagenav = $('.btn-group');
-
+      
+      // 查找新的分页结构
+      const pagenav = $('.b2-pagenav');
+      
       if (pagenav.length > 0) {
-        // 1. 获取最大页码
+        // 从 data-max 属性获取最大页码
+        const maxPageAttr = pagenav.attr('data-max');
         let maxPage = 1;
-        // 优先用 .pager-center span 里的"xx 页"
-        const pagerCenter = pagenav.find('label.pager-center span').first();
-        if (pagerCenter.length > 0) {
-          const match = pagerCenter.text().match(/(\d+)/);
-          if (match) {
-            maxPage = parseInt(match[1], 10);
+        
+        if (maxPageAttr) {
+          maxPage = parseInt(maxPageAttr, 10);
+        } else {
+          // 备用方案：从 page-nav 元素的 pages 属性获取
+          const pageNav = pagenav.find('page-nav');
+          const pagesAttr = pageNav.attr('pages');
+          if (pagesAttr) {
+            maxPage = parseInt(pagesAttr, 10);
           }
         }
-        // 如果没找到，再找所有 button 里的最大数字
-        if (maxPage === 1) {
-          pagenav.find('button').each((i, el) => {
-            const num = parseInt($(el).text(), 10);
-            if (!isNaN(num) && num > maxPage) maxPage = num;
-          });
-        }
+        
+        // 如果找到了有效的最大页码，生成分页链接
+        if (maxPage > 1) {
+          const currentUrl = new URL(urlToScrape);
+          const basePath = currentUrl.pathname.replace(/\/page\/\d+$/, ''); // 去掉/page/数字
+          const pageLinks = [];
+          for (let i = 2; i <= maxPage; i++) {
+            pageLinks.push(`${basePath}/page/${i}`);
+          }
 
-        // 2. 生成分页链接
-        const currentUrl = new URL(urlToScrape);
-        const basePath = currentUrl.pathname.replace(/\/page\/\d+$/, ''); // 去掉/page/数字
-        const pageLinks = [];
-        for (let i = 2; i <= maxPage; i++) {
-          pageLinks.push(`${basePath}/page/${i}`);
+          // 加入 linksOnPage
+          linksOnPage = linksOnPage.concat(pageLinks.map(p => currentUrl.origin + p));
+          Logger.info(
+            `Find pagination links for ID ${scrapeId}: ${maxPage} total pages, added ${pageLinks.length} page links`
+          );
         }
-
-        // 3. 加入 linksOnPage
-        linksOnPage = linksOnPage.concat(pageLinks.map(p => currentUrl.origin + p));
-        Logger.info(
-          `Find linksOnPage ID  ${scrapeId} to ${linksOnPage.join(", ")}`
-        );
       }
     }
 

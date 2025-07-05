@@ -1,4 +1,10 @@
 export const urlSpecificParams = {
+  "aihub.cn": {
+    defaultScraper: "playwright",
+    params: {
+      wait: 3000,
+    },
+  },
   "platform.openai.com": {
     defaultScraper: "playwright",
     params: {
