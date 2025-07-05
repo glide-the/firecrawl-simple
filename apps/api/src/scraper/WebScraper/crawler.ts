@@ -273,7 +273,42 @@ export class WebCrawler {
         }
       }
     });
+    
+    // 查找新的分页结构
+    const pagenav = $('.b2-pagenav');
+    
+    if (pagenav.length > 0) {
+      // 从 data-max 属性获取最大页码
+      const maxPageAttr = pagenav.attr('data-max');
+      let maxPage = 1;
+      
+      if (maxPageAttr) {
+        maxPage = parseInt(maxPageAttr, 10);
+      } else {
+        // 备用方案：从 page-nav 元素的 pages 属性获取
+        const pageNav = pagenav.find('page-nav');
+        const pagesAttr = pageNav.attr('pages');
+        if (pagesAttr) {
+          maxPage = parseInt(pagesAttr, 10);
+        }
+      }
+      
+      // 如果找到了有效的最大页码，生成分页链接
+      if (maxPage > 1) {
+        const currentUrl = new URL(pageUrl);
+        const basePath = currentUrl.pathname.replace(/\/page\/\d+$/, ''); // 去掉/page/数字
+        const pageLinks = [];
+        for (let i = 2; i <= maxPage; i++) {
+          pageLinks.push(`${basePath}/page/${i}`);
+        }
+        // 加入 linksOnPage
+        links = links.concat(pageLinks.map(p => currentUrl.origin + p));
 
+        Logger.info(
+          `Find pagination links for ID ${pageUrl}: ${maxPage} total pages, added ${pageLinks.length} page links`
+        );
+      }
+    }
     const dedupedLinks = [...new Set(links)];
 
     Logger.debug(`WebCrawler extracted ${dedupedLinks.length} links from HTML`);

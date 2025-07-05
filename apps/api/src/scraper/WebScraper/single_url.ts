@@ -271,9 +271,7 @@ export async function scrapeSingleUrl(
     const metadata = extractMetadata(soup, urlToScrape);
 
     let linksOnPage: string[] | undefined;
-    Logger.info(
-      `Find linksOnPage ID  ${scrapeId} pageOptions.includeLinks ${pageOptions.includeLinks}}`
-    );
+
     if (pageOptions.includeLinks) {
       linksOnPage = extractLinks(rawHtml, urlToScrape);
       Logger.info(
