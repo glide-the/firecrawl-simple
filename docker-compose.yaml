@@ -22,6 +22,8 @@ x-common-service: &common-service
 services:
   puppeteer-service:
     image: trieve/puppeteer-service-ts
+    ports:
+      - "3000:3000"
     build:
       context: ./apps/puppeteer-service-ts/
       dockerfile: Dockerfile
@@ -35,27 +37,31 @@ services:
     networks:
       - backend
 
-  api:
-    platform: linux/amd64
-    image: trieve/firecrawl
-    <<: *common-service
-    depends_on:
-      - redis
-      - puppeteer-service
-    ports:
-      - "3002:3002"
-    command: ["pnpm", "run", "start:production"]
+  # api:
+  #   platform: linux/amd64
+  #   image: trieve/firecrawl
+  #   <<: *common-service
+  #   depends_on:
+  #     - redis
+  #     - puppeteer-service
+  #   ports:
+  #     - "3002:3002"
+  #   volumes:
+  #     - ./apps/api:/app
+  #   command: ["sh", "-c", "pnpm install --frozen-lockfile && pnpm run build && pnpm run start:production"]
 
-  worker:
-    <<: *common-service
-    depends_on:
-      - redis
-      - puppeteer-service
-      - api
-    command: ["pnpm", "run", "workers"]
+  # worker:
+  #   <<: *common-service
+  #   depends_on:
+  #     - redis
+  #     - puppeteer-service
+  #     - api
+  #   command: ["pnpm", "run", "workers"]
 
   redis:
     image: redis:alpine
+    ports:
+      - "6379:6379"
     networks:
       - backend
     command: redis-server --bind 0.0.0.0

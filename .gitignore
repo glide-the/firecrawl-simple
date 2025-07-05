@@ -7,7 +7,7 @@ dump.rdb
 apps/js-sdk/node_modules/
 
 apps/api/.env.local
-
+apps/api/.pnpm-store
 apps/test-suite/node_modules/
 
 
