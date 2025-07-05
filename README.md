@@ -148,6 +148,7 @@ curl -X POST http://localhost:3002/v1/crawl \
       "limit": 100,
       "scrapeOptions": {
         "formats": ["markdown"]
+        "includeTags": [".content-area", "#primary-home"]
       }
     }'
 ```

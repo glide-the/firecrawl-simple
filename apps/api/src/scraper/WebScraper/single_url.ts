@@ -274,6 +274,41 @@ export async function scrapeSingleUrl(
 
     if (pageOptions.includeLinks) {
       linksOnPage = extractLinks(rawHtml, urlToScrape);
+
+      // 新增：自动发现分页链接
+      const $ =  cheerio.load(rawHtml);
+      const pagenav = $('.b2-pagenav.post-nav.box.mg-t.b2-radius');
+      if (pagenav.length > 0) {
+        // 1. 获取最大页码
+        let maxPage = 1;
+        // 优先用 data-max 属性
+        const dataMax = pagenav.attr('data-max');
+        if (dataMax) {
+          maxPage = parseInt(dataMax, 10);
+        } else {
+          // 或者找所有 button 里的最大数字
+          pagenav.find('button').each((i, el) => {
+            const num = parseInt($(el).text(), 10);
+            if (!isNaN(num) && num > maxPage) maxPage = num;
+          });
+        }
+
+        // 2. 生成分页链接
+        const currentUrl = new URL(urlToScrape);
+        const basePath = currentUrl.pathname.replace(/\/page\/\d+$/, ''); // 去掉/page/数字
+        const pageLinks = [];
+        for (let i = 2; i <= maxPage; i++) {
+          pageLinks.push(`${basePath}/page/${i}`);
+        }
+
+        // 3. 加入 linksOnPage
+        linksOnPage = linksOnPage.concat(pageLinks.map(p => currentUrl.origin + p));
+        Logger.debug(
+          `Find linksOnPage ID  ${scrapeId} to ${linksOnPage.join(
+            ", "
+          )}`
+        );
+      }
     }
 
     let document: Document;
