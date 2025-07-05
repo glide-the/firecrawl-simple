@@ -140,14 +140,14 @@ Your scaling bottlenecks will be the following in-order:
 Used to crawl a URL and all accessible subpages. This submits a crawl job and returns a job ID to check the status of the crawl.
 
 ```bash
-curl -X POST https://<your-url>/v1/crawl \
+curl -X POST http://localhost:3002/v1/crawl \
     -H 'Content-Type: application/json' \
     -H 'Authorization: Bearer fc-YOUR_API_KEY' \
     -d '{
-      "url": "https://docs.firecrawl.dev",
+      "url": "https://www.aihub.cn/tools/writing",
       "limit": 100,
       "scrapeOptions": {
-        "formats": ["markdown", "html"]
+        "formats": ["markdown"]
       }
     }'
 ```
@@ -167,7 +167,7 @@ Returns a crawl job id and the url to check the status of the crawl.
 Used to check the status of a crawl job and get its result.
 
 ```bash
-curl -X GET https://<your-url>/v1/crawl/123-456-789 \
+curl -X GET http://localhost:3002/v1/crawl/9fda5744-b7fb-4818-9b28-6a2c5b64cc95 \
   -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer YOUR_API_KEY'
 ```

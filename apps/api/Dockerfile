@@ -1,49 +1,35 @@
 FROM node:20-slim AS base
 
-# Create app directory
+# 设置工作目录
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm corepack@latest
-RUN corepack enable
+# 安装 pnpm
+RUN npm install -g pnpm
 
-# Copy package files
+# 安装 chromium（arm64 兼容）
+RUN apt-get update && \
+    apt-get install -y chromium fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-symbola fonts-noto fonts-freefont-ttf --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
+
+# 设置 Hero/Chromium 路径（如 Hero 支持）
+ENV HERO_CHROMIUM_PATH="/usr/bin/chromium"
+
+# 拷贝依赖文件
 COPY ./package.json ./pnpm-lock.yaml ./
 
-# Install dependencies
+# 安装依赖
 RUN pnpm install --frozen-lockfile
 
-# Install necessary build dependencies
-RUN apt-get update -qq && \
-    apt-get install -y \
-    ca-certificates \
-    git \
-    golang-go \
-    && update-ca-certificates
+# 拷贝代码
+COPY . .
 
-# Copy the rest of the application
-COPY . ./
-
-# Build Go module
-COPY ./src/lib/go-html-to-md/ ./src/lib/go-html-to-md/
-RUN cd src/lib/go-html-to-md && \
-    go mod tidy && \
-    go build -o html-to-markdown.so -buildmode=c-shared html-to-markdown.go && \
-    chmod +x html-to-markdown.so
-
-# Build the application
+# 构建
 RUN pnpm run build
 
-# Install runtime dependencies
-RUN apt-get install --no-install-recommends -y \
-    chromium \
-    chromium-sandbox \
-    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives
-
-# Environment setup
-ENV PUPPETEER_EXECUTABLE_PATH="/usr/bin/chromium"
-ARG PORT=8080
+# 设置端口
+ARG PORT=3000
 ENV PORT=${PORT}
 EXPOSE ${PORT}
 
+# 启动应用
 CMD ["pnpm", "start"]

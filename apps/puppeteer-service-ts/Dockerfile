@@ -1,69 +1,35 @@
-FROM node:18-slim
-
-WORKDIR /usr/src/app
-
-RUN npm install -g pnpm
-
-COPY . .
-
-RUN pnpm install
-
-# Install Playwright dependencies
-RUN npx playwright install --with-deps
-
-RUN pnpm run build
-
-ARG PORT
-ENV PORT=${PORT}
-
-EXPOSE ${PORT}
-
-CMD [ "pnpm", "start" ]
-FROM node:18-slim
-
-# Install system dependencies for Playwright
-RUN apt-get update && \
-    apt-get install -y wget gnupg && \
-    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list && \
-    apt-get update && \
-    apt-get install -y \
-    google-chrome-stable \
-    fonts-ipafont-gothic \
-    fonts-wqy-zenhei \
-    fonts-thai-tlwg \
-    fonts-kacst \
-    fonts-symbola \
-    fonts-noto \
-    fonts-freefont-ttf \
-    --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+FROM node:20-slim
 
 WORKDIR /app
 
-# Install pnpm globally
+# 安装 pnpm
 RUN npm install -g pnpm
 
-# Copy package files
+# 安装 chromium（arm64 兼容）和常用字体
+RUN apt-get update && \
+    apt-get install -y chromium fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-symbola fonts-noto fonts-freefont-ttf --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
+
+# 设置 Hero/Chromium 路径（如 Hero 支持）
+ENV HERO_CHROMIUM_PATH="/usr/bin/chromium"
+
+# 拷贝依赖文件
 COPY ./package.json ./pnpm-lock.yaml ./
 
-# Install dependencies
+# 安装依赖
 RUN pnpm install --frozen-lockfile
 
-# Copy the rest of the application
+# 拷贝代码
 COPY . .
 
-# Install Playwright with dependencies
+# 安装 Playwright 浏览器依赖（如有 Playwright 需求）
 RUN npx playwright install --with-deps chromium
 
-# Build the application
+# 构建
 RUN pnpm run build
 
-# Set up environment
 ARG PORT=3000
 ENV PORT=${PORT}
-ENV PLAYWRIGHT_BROWSERS_PATH=/app/ms-playwright
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 EXPOSE ${PORT}
 
